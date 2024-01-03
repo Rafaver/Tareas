@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lista de Tareas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.9.3/css/bulma.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding-top: 40px;
+        }
+
+        .section {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        .task-form {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .task-form input {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .task-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #eaeaea;
+        }
+
+        .task-item button {
+            margin-left: 10px;
+        }
+
+        .button.is-danger.is-small {
+            font-size: 12px;
+        }
+
+        .button.is-success.is-small {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <h1 class="title">Lista de Tareas</h1>
+            <form id="taskForm" class="task-form">
+                <input class="input" type="text" id="taskInput" placeholder="Nueva tarea">
+                <button class="button is-primary" type="submit">Añadir Tarea</button>
+            </form>
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+    </section>
+
+    <script>
+        function addTask(event) {
+            event.preventDefault();
+            var taskInput = document.getElementById('taskInput').value;
+
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ tarea: taskInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.message === 'Tarea agregada correctamente') {
+                    getTasks();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteTask(taskId) {
+            fetch(`/delete/${taskId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getTasks();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function completeTask(taskId) {
+            fetch(`/complete/${taskId}`, {
+                method: 'PATCH'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                getTasks();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function getTasks() {
+            fetch('/tasks')
+            .then(response => response.json())
+            .then(data => {
+                var taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+                data.forEach(task => {
+                    var taskItem = document.createElement('li');
+                    taskItem.className = 'task-item';
+                    taskItem.textContent = task.name;
+
+                    var deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Eliminar';
+                    deleteButton.className = 'button is-danger is-small';
+                    deleteButton.onclick = function() {
+                        deleteTask(task.id);
+                    };
+
+                    var completeButton = document.createElement('button');
+                    completeButton.textContent = 'Completado';
+                    completeButton.className = 'button is-success is-small';
+                    completeButton.onclick = function() {
+                        completeTask(task.id);
+                    };
+
+                    taskItem.appendChild(deleteButton);
+                    taskItem.appendChild(completeButton);
+                    taskList.appendChild(taskItem);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('taskForm').addEventListener('submit', addTask);
+
+        getTasks();
+    </script>
+</body>
+</html>
